@@ -1,0 +1,70 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sqlalchemy import create_engine
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+
+# Connect to the SQLite database
+engine = create_engine('sqlite:///company_sales.db')
+
+# Sample query to fetch data from the database
+query = "SELECT * FROM sales_data;"
+df = pd.read_sql_query(query, engine)
+
+# Data Analysis
+total_sales_per_company = df.groupby('Company')['Sales'].sum()
+total_sales_per_category = df.groupby('Category')['Sales'].sum()
+
+# Plotting total sales per company
+plt.figure(figsize=(12, 6))
+total_sales_per_company.plot(kind='bar', color='skyblue', alpha=0.7)
+plt.title('Total Sales per Company')
+plt.xlabel('Company')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Plotting total sales per category
+plt.figure(figsize=(10, 6))
+total_sales_per_category.plot(kind='bar', color='salmon', alpha=0.7)
+plt.title('Total Sales per Category')
+plt.xlabel('Category')
+plt.ylabel('Total Sales')
+plt.show()
+
+# Predictive Analysis
+# Convert categorical 'Category' column to numerical using one-hot encoding
+df = pd.get_dummies(df, columns=['Category'], drop_first=True)
+
+# Separate features and target variable
+X = df.drop(['Sales'], axis=1)
+y = df['Sales']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a RandomForestRegressor (you can choose a different model based on your data)
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Display predicted vs actual sales for a subset of data
+comparison_df = pd.DataFrame({'Actual Sales': y_test, 'Predicted Sales': y_pred})
+print(comparison_df.head(10))
+
+# Generate a histogram of actual sales
+plt.figure(figsize=(8, 6))
+plt.hist(y_test, bins=20, alpha=0.7, color='blue', edgecolor='black')
+plt.title('Actual Sales Distribution')
+plt.xlabel('Sales')
+plt.ylabel('Frequency')
+plt.show()
+
+# Generate a histogram of predicted sales
+plt.figure(figsize=(8, 6))
+plt.hist(y_pred, bins=20, alpha=0.7, color='green', edgecolor='black')
+plt.title('Predicted Sales Distribution')
+plt.xlabel('Sales')
+plt.ylabel('Frequency')
+plt.show()
